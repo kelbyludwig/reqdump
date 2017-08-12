@@ -65,7 +65,6 @@ function requestLogger(options) {
     }
 
     function logger(url) {
-        var url = new URL(url);
         for (var i in filters) {
             url = filters[i](url);
         }
