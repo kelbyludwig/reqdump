@@ -7,6 +7,7 @@ const optionDefinitions = [
   { name: 'url', alias: 'u', type: String },
   { name: 'ignore', alias: 'i', type: String, multiple: true },
   { name: 'no_params', alias: 'n', type: Boolean },
+  { name: 'first_party_only', alias: 'f', type: Boolean },
 ]
 const options = commandLineArgs(optionDefinitions)
 
@@ -19,6 +20,24 @@ if (!("url" in options)) {
 function requestLogger(options) {
 
     filters = [];
+
+    if ("first_party_only" in options) {
+        function fpfilter(url) {
+            if (url) {
+                url = new URL(url);
+                fpurl = new URL(options.url);
+                if (url.hostname.endsWith(fpurl.hostname) ||
+                    url.hostname.startsWith(fpurl.hostname) ||
+                    fpurl.hostname.endsWith(url.hostname) ||
+                    fpurl.hostname.startsWith(url.hostname)) {
+                    return url.href; 
+                }
+            }
+            return ""
+        }
+        filters.push(fpfilter);
+    }
+
     if ("ignore" in options) {
         exts = options.ignore;
         function ifilter(url) {
