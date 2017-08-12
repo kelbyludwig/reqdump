@@ -4,12 +4,28 @@ const commandLineArgs = require('command-line-args')
 // command line options
 const optionDefinitions = [
   { name: 'url', alias: 'u', type: String },
+  { name: 'ignore', alias: 'i', type: String, multiple: true },
 ]
 const options = commandLineArgs(optionDefinitions)
 
+// command line option processing
 if (!("url" in options)) {
     console.error("please provide a url via --url");
     return
+}
+
+function requestLogger(options) {
+    if ("ignore" in options) {
+        exts = options.ignore
+        function log(url) {
+            ext = url.split(".").pop();
+            if (exts.indexOf(ext) == -1) {
+                console.log(url);
+            }
+        }
+        return log
+    }
+    return console.log
 }
 
 CDP((client) => {
@@ -17,8 +33,9 @@ CDP((client) => {
     const {Network, Page} = client;
 
     //add handler to log all requests
+    logger = requestLogger(options);
     Network.requestWillBeSent((params) => {
-        console.log(params.request.url);
+        logger(params.request.url);
     });
 
     //add handler to close client after page is done loading
