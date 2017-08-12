@@ -1,5 +1,6 @@
 const CDP = require('chrome-remote-interface');
-const commandLineArgs = require('command-line-args')
+const commandLineArgs = require('command-line-args');
+const { URL } = require('url');
 
 // command line options
 const optionDefinitions = [
@@ -21,10 +22,12 @@ function requestLogger(options) {
     if ("ignore" in options) {
         exts = options.ignore;
         function ifilter(url) {
-            ext = url.split(".").pop();
-            ext = ext.split("?")[0];
-            if (exts.indexOf(ext) == -1) {
-                return url;
+            if (url) {
+                url = new URL(url);
+                ext = url.pathname.split(".").pop();
+                if (exts.indexOf(ext) == -1) {
+                    return url.href;
+                }
             }
             return ""
         }
@@ -33,13 +36,17 @@ function requestLogger(options) {
 
     if ("no_params" in options) {
         function pfilter(url) {
-            url = url.split("?")[0];
-            return url;
+            if (url) {
+                url = new URL(url);
+                return url.origin + url.pathname;
+            }
+            return ""
         }
         filters.push(pfilter);
     }
 
-    function logger(url){
+    function logger(url) {
+        var url = new URL(url);
         for (var i in filters) {
             url = filters[i](url);
         }
