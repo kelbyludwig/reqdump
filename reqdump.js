@@ -5,6 +5,7 @@ const commandLineArgs = require('command-line-args')
 const optionDefinitions = [
   { name: 'url', alias: 'u', type: String },
   { name: 'ignore', alias: 'i', type: String, multiple: true },
+  { name: 'no_params', alias: 'n', type: Boolean },
 ]
 const options = commandLineArgs(optionDefinitions)
 
@@ -15,17 +16,38 @@ if (!("url" in options)) {
 }
 
 function requestLogger(options) {
+
+    filters = [];
     if ("ignore" in options) {
-        exts = options.ignore
-        function log(url) {
+        exts = options.ignore;
+        function ifilter(url) {
             ext = url.split(".").pop();
+            ext = ext.split("?")[0];
             if (exts.indexOf(ext) == -1) {
-                console.log(url);
+                return url;
             }
+            return ""
         }
-        return log
+        filters.push(ifilter);
     }
-    return console.log
+
+    if ("no_params" in options) {
+        function pfilter(url) {
+            url = url.split("?")[0];
+            return url;
+        }
+        filters.push(pfilter);
+    }
+
+    function logger(url){
+        for (var i in filters) {
+            url = filters[i](url);
+        }
+        if (url) {
+            console.log(url);
+        }
+    }
+    return logger;
 }
 
 CDP((client) => {
@@ -53,6 +75,7 @@ CDP((client) => {
         console.error(err);
         client.close();
     });
+
 }).on('error', (err) => {
     // cannot connect to the remote endpoint
     console.error(err);
